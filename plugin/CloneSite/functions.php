@@ -11,9 +11,10 @@ function getCloneFilesInfo($dir, $subdir = "", $extensionsToCopy = array('mp4', 
                 if (!in_array($path_info['extension'], $extensionsToCopy)) {
                     continue;
                 }
+                $url = Video::getURLToFile("{$subdir}{$entry}");
                 $f = new stdClass();
                 $f->filename = $entry;
-                $f->url = "{$global['webSiteRootURL']}videos/{$subdir}{$entry}";
+                $f->url = $url;
                 $f->filesize = filesize($dir . $entry);
                 $f->filemtime = filemtime($dir . $entry);
                 $files[] = $f;
@@ -44,4 +45,12 @@ function detectNewFiles($serverArray, $clientArray){
         }
     }
     return $serverArray;
+}
+
+
+function isRsync() {
+    return trim(shell_exec('which rsync'));
+}
+function isSshpass() {
+    return trim(shell_exec('which sshpass'));
 }

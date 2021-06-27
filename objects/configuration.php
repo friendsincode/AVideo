@@ -77,7 +77,7 @@ class Configuration {
         }
         $this->users_id = User::getId();
 
-
+        ObjectYPT::deleteCache("getEncoderURL");
 
         $sql = "UPDATE configurations SET "
                 . "video_resolution = '{$this->video_resolution}',"
@@ -184,7 +184,7 @@ class Configuration {
     }
 
     function setAuthCanUploadVideos($authCanUploadVideos) {
-        $this->authCanUploadVideos = $authCanUploadVideos;
+        $this->authCanUploadVideos = intval($authCanUploadVideos);
     }
 
     function setAuthCanViewChart($authCanViewChart) {
@@ -212,25 +212,44 @@ class Configuration {
         return $this->logo . $get;
     }
 
-    function getFavicon($getPNG = false) {
+    static function _getFavicon($getPNG = false) {
         global $global;
+        $file = false;
+        $url = false;
         if (!$getPNG) {
             $file = $global['systemRootPath'] . "videos/favicon.ico";
-            $url = "{$global['webSiteRootURL']}videos/favicon.ico";
+            $url = getCDN()."videos/favicon.ico";
             if (!file_exists($file)) {
                 $file = $global['systemRootPath'] . "view/img/favicon.ico";
-                $url = "{$global['webSiteRootURL']}view/img/favicon.ico";
+                $url = getCDN()."view/img/favicon.ico";
             }
         }
         if (empty($url) || !file_exists($file)) {
             $file = $global['systemRootPath'] . "videos/favicon.png";
-            $url = "{$global['webSiteRootURL']}videos/favicon.png";
+            $url = getCDN()."videos/favicon.png";
             if (!file_exists($file)) {
                 $file = $global['systemRootPath'] . "view/img/favicon.png";
-                $url = "{$global['webSiteRootURL']}view/img/favicon.png";
+                $url = getCDN()."view/img/favicon.png";
             }
         }
-        return $url . "?" . filectime($file);
+        return array('file' => $file, 'url' => $url);
+    }
+
+    function getFavicon($getPNG = false, $getTime = true) {
+        $return = self::_getFavicon($getPNG);
+        if ($getTime) {
+            return $return['url'] . "?" . filemtime($return['file']);
+        } else {
+            return $return['url'];
+        }
+    }
+
+    static function getOGImage() {
+        global $global;
+        $destination = Video::getStoragePath()."cache/og_200X200.jpg";
+        $return = self::_getFavicon(true);
+        convertImageToOG($return['file'], $destination);
+        return getCDN() . "videos/cache/og_200X200.jpg";
     }
 
     function setHead($head) {
@@ -319,24 +338,43 @@ class Configuration {
         if (empty($global['salt'])) {
             $global['salt'] = uniqid();
         }
+        if (empty($global['disableTimeFix'])) {
+            $global['disableTimeFix'] = 0;
+        }
+        if (empty($global['logfile'])) {
+            $global['logfile'] = $global['systemRootPath'] . 'videos/avideo.log';
+        }
         $content = "<?php
-\$global['configurationVersion'] = 2;
-\$global['disableAdvancedConfigurations'] = 0;
-\$global['videoStorageLimitMinutes'] = 0;
-if(!empty(\$_SERVER['SERVER_NAME']) && \$_SERVER['SERVER_NAME']!=='localhost' && !filter_var(\$_SERVER['SERVER_NAME'], FILTER_VALIDATE_IP)) { 
+\$global['configurationVersion'] = 3.1;
+\$global['disableAdvancedConfigurations'] = {$global['disableAdvancedConfigurations']};
+\$global['videoStorageLimitMinutes'] = {$global['videoStorageLimitMinutes']};
+\$global['disableTimeFix'] = {$global['disableTimeFix']};
+\$global['logfile'] = '{$global['logfile']}';
+if(!empty(\$_SERVER['SERVER_NAME']) && \$_SERVER['SERVER_NAME']!=='localhost' && !filter_var(\$_SERVER['SERVER_NAME'], FILTER_VALIDATE_IP)) {
     // get the subdirectory, if exists
-    \$subDir = str_replace(array(\$_SERVER[\"DOCUMENT_ROOT\"], 'videos/configuration.php'), array('',''), __FILE__);
+    \$file = str_replace(\"\\\\\", \"/\", __FILE__);
+    \$subDir = str_replace(array(\$_SERVER[\"DOCUMENT_ROOT\"], 'videos/configuration.php'), array('',''), \$file);
     \$global['webSiteRootURL'] = \"http\".(!empty(\$_SERVER['HTTPS'])?\"s\":\"\").\"://\".\$_SERVER['SERVER_NAME'].\$subDir;
 }else{
     \$global['webSiteRootURL'] = '{$global['webSiteRootURL']}';
 }
 \$global['systemRootPath'] = '{$global['systemRootPath']}';
 \$global['salt'] = '{$global['salt']}';
-\$global['enableDDOSprotection'] = 1;
-\$global['ddosMaxConnections'] = 40;
-\$global['ddosSecondTimeout'] = 5;
-\$global['strictDDOSprotection'] = 0;
+\$global['enableDDOSprotection'] = {$global['enableDDOSprotection']};
+\$global['ddosMaxConnections'] = {$global['ddosMaxConnections']};
+\$global['ddosSecondTimeout'] = {$global['ddosSecondTimeout']};
+\$global['strictDDOSprotection'] = {$global['strictDDOSprotection']};
 \$global['noDebug'] = 0;
+\$global['webSiteRootPath'] = '';
+if(empty(\$global['webSiteRootPath'])){
+    preg_match('/https?:\/\/[^\/]+(.*)/i', \$global['webSiteRootURL'], \$matches);
+    if(!empty(\$matches[1])){
+        \$global['webSiteRootPath'] = \$matches[1];
+    }
+}
+if(empty(\$global['webSiteRootPath'])){
+    die('Please configure your webSiteRootPath');
+}
 
 \$mysqlHost = '{$mysqlHost}';
 \$mysqlUser = '{$mysqlUser}';
@@ -423,34 +461,82 @@ require_once \$global['systemRootPath'].'objects/include_config.php';
     }
 
     function _getEncoderURL() {
-        return $this->encoderURL;
-    }
-
-    function getEncoderURL() {
-        global $advancedCustom;
-        if (!empty($advancedCustom->useEncoderNetworkRecomendation) && !empty($advancedCustom->encoderNetwork)) {
-            if (substr($advancedCustom->encoderNetwork, -1) !== '/') {
-                $advancedCustom->encoderNetwork .= "/";
-            }
-            $bestEncoder = json_decode(url_get_contents($advancedCustom->encoderNetwork . "view/getBestEncoder.php"));
-            if (!empty($bestEncoder->siteURL)) {
-                $this->encoderURL = $bestEncoder->siteURL;
-            }else{
-                error_log("Configuration::getEncoderURL ERROR your network ($advancedCustom->encoderNetwork) is not configured properly This slow down your site a lot, disable the option useEncoderNetworkRecomendation in your CustomizeAdvanced plugin");
-            }
-        }
-
-        if (empty($this->encoderURL)) {
-            return "https://encoder2.avideo.com/";
-        }
         if (substr($this->encoderURL, -1) !== '/') {
             $this->encoderURL .= "/";
         }
         return $this->encoderURL;
     }
+    
+    function shouldUseEncodernetwork(){
+        global $advancedCustom, $global;
+        if(empty($advancedCustom->useEncoderNetworkRecomendation) || empty($advancedCustom->encoderNetwork)){
+           return false; 
+        }
+        if($advancedCustom->encoderNetwork === 'https://network.avideo.com/'){   
+            // check if you have your own encoder
+            $encoderConfigFile = "{$global['systemRootPath']}Encoder/videos/configuration.php";
+            if(file_exists($encoderConfigFile)){ // you have an encoder do not use the public one
+                _error_log("Configuration:shouldUseEncodernetwork 1 You checked the Encoder Network but you have your own encoder, we will ignore this option");
+                return false;
+            }
+            
+            if (substr($this->encoderURL, -1) !== '/') {
+                $this->encoderURL .= "/";
+            }
+            
+            if(!preg_match('/encoder[1-9].avideo.com/i', $this->encoderURL)){
+                $creatingImages = "{$this->encoderURL}view/img/creatingImages.jpg";
+                if(isURL200($creatingImages)){
+                    _error_log("Configuration:shouldUseEncodernetwork 2 You checked the Encoder Network but you have your own encoder, we will ignore this option");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    function getEncoderURL() {
+        global $global, $getEncoderURL, $advancedCustom;
+        if(!empty($global['forceEncoderURL'])){
+            return $global['forceEncoderURL'];
+        }
+        if (empty($getEncoderURL)) {
+            $getEncoderURL = ObjectYPT::getCache("getEncoderURL", 60);
+            if (empty($getEncoderURL)) {
+                if ($this->shouldUseEncodernetwork()) {
+                    if (substr($advancedCustom->encoderNetwork, -1) !== '/') {
+                        $advancedCustom->encoderNetwork .= "/";
+                    }
+                    $bestEncoder = _json_decode(url_get_contents($advancedCustom->encoderNetwork . "view/getBestEncoder.php", "", 10));
+                    if (!empty($bestEncoder->siteURL)) {
+                        $this->encoderURL = $bestEncoder->siteURL;
+                    } else {
+                        error_log("Configuration::getEncoderURL ERROR your network ($advancedCustom->encoderNetwork) is not configured properly This slow down your site a lot, disable the option useEncoderNetworkRecomendation in your CustomizeAdvanced plugin");
+                    }
+                }
+
+                if (empty($this->encoderURL)) {
+                    $getEncoderURL = "https://encoder1.avideo.com/";
+                }
+                if (substr($this->encoderURL, -1) !== '/') {
+                    $this->encoderURL .= "/";
+                }
+                $getEncoderURL = $this->encoderURL;
+                ObjectYPT::setCache("getEncoderURL", $getEncoderURL);
+            }
+        }
+        return $getEncoderURL;
+    }
 
     function setEncoderURL($encoderURL) {
         $this->encoderURL = $encoderURL;
+    }
+
+    function getPageTitleSeparator() {
+        if(!defined('PAGE_TITLE_SEPARATOR')){
+            define("PAGE_TITLE_SEPARATOR", "&middot;"); // This is ready to be configurable, if needed
+        }
+        return " " . PAGE_TITLE_SEPARATOR . " ";
     }
 
 }

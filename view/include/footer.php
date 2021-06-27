@@ -1,4 +1,22 @@
-<footer>
+<?php
+$footerjs = "";
+$fileUpdates = thereIsAnyUpdate();
+if (!empty($fileUpdates)) {
+    $footerjs .= "$.toast({
+    heading: 'Update required',
+    text: '<a href=\"" . $global['webSiteRootURL'] . "update\">" . __('You have a new version to install') . "</a>',
+    showHideTransition: 'plain',
+    icon: 'error',
+    hideAfter: 20000
+});";
+    //$footerjs .= 'var filesToUpdate='.json_encode($fileUpdates).';';
+}
+if (empty($advancedCustom)) {
+    $advancedCustom = AVideoPlugin::getObjectData("CustomizeAdvanced");
+}
+?>
+<div class="clearfix"></div>
+<footer style="<?php echo $advancedCustom->footerStyle; ?> display: none;" id="mainFooter">
     <?php
     $custom = "";
     $extraPluginFile = $global['systemRootPath'] . 'plugin/Customize/Objects/ExtraConfig.php';
@@ -11,10 +29,10 @@
         ?>
         <ul class="list-inline">
             <li>
-                Powered by <a href="http://www.avideo.com" class="external btn btn-outline btn-primary btn-xs" target="_blank">AVideo®</a> - <a href="http://platform.avideo.com" class="external btn btn-outline btn-primary btn-xs" target="_blank">A Video Platform v<?php echo $config->getVersion(); ?></a>
+                Powered by <a href="http://www.avideo.com" class="external btn btn-outline btn-primary btn-xs" target="_blank" rel="noopener noreferrer">AVideo®</a> - <a href="http://platform.avideo.com" class="external btn btn-outline btn-primary btn-xs" target="_blank" rel="noopener noreferrer">A Video Platform v<?php echo $config->getVersion(); ?></a>
             </li>
             <li>
-                <a href="https://www.facebook.com/avideo/" class="external btn btn-outline btn-primary btn-xs" target="_blank"><span class="sr-only">Facebook</span><i class="fab fa-facebook-square"></i></a>
+                <a href="https://www.facebook.com/avideo/" class="external btn btn-outline btn-primary btn-xs" target="_blank" rel="noopener noreferrer"><span class="sr-only">Facebook</span><i class="fab fa-facebook-square"></i></a>
             </li>
         </ul>
         <?php
@@ -24,87 +42,42 @@
     ?>
 </footer>
 <script>
-    window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
-        if (url == "") {
-            url = "embed in html";
-        }
-        $.ajax({
-            url: webSiteRootURL + "objects/ajaxErrorCatcher.php?error=" + encodeURI("JS-Err: " + errorMsg + " @ line " + lineNumber + " in file " + url + " at visit on <?php echo $_SERVER['REQUEST_URI']; ?>"),
-            context: document.body
-        }).done(function () {
-            console.log("<?php echo 'A Javascript-error happend. Please tell your admin to clear the folder videos/cache. \r\n If this doesn\'t help, attach these infos to a github-pull-request:'; ?> \r\n Msg:" + errorMsg + " \r\n Url: " + url + ", line: " + lineNumber + ", Address: <?php echo $_SERVER['REQUEST_URI'] ?>");
-        });
-        return false;
-    }
-
-    // Just for testing
-    // throw "A Bug";
     $(function () {
 <?php
-if (!empty($_GET['error'])) {
-    ?>
-            swal({title: "Sorry!", text: "<?php echo $_GET['error']; ?>", type: "error", html: true});
-    <?php
-}
-?>
-<?php
-if (!empty($_GET['msg'])) {
-    ?>
-            swal({title: "Ops!", text: "<?php echo $_GET['msg']; ?>", type: "info", html: true});
-    <?php
-}
-?>
-<?php
-if (!empty($_GET['success']) && strlen($_GET['success']) > 4) {
-    ?>
-            swal({title: "<?php echo __("Congratulations"); ?>", text: "<?php echo $_GET['success']; ?>", type: "success", html: true});
-    <?php
-}
+showAlertMessage();
 ?>
     });
 </script>
-<!-- <script src="<?php echo $global['webSiteRootURL']; ?>bootstrap/js/bootstrap.min.js" type="text/javascript"></script> -->
-<script src="<?php echo $global['webSiteRootURL']; ?>view/js/jquery.lazy/jquery.lazy.min.js" type="text/javascript"></script>
-<script src="<?php echo $global['webSiteRootURL']; ?>view/js/jquery.lazy/jquery.lazy.plugins.min.js" type="text/javascript"></script>
-<script src="<?php echo $global['webSiteRootURL']; ?>view/js/script.js?<?php echo filectime("{$global['systemRootPath']}view/js/script.js"); ?>" type="text/javascript"></script>
+<script src="<?php echo getCDN(); ?>view/js/jquery.lazy/jquery.lazy.min.js" type="text/javascript"></script>
+<script src="<?php echo getCDN(); ?>view/js/jquery.lazy/jquery.lazy.plugins.min.js" type="text/javascript"></script>
+<script src="<?php echo getCDN(); ?>view/js/script.js?<?php echo filectime("{$global['systemRootPath']}view/js/script.js"); ?>" type="text/javascript"></script>
 <?php
 $jsFiles = array();
 //$jsFiles[] = "view/js/jquery.lazy/jquery.lazy.min.js";
 //$jsFiles[] = "view/js/jquery.lazy/jquery.lazy.plugins.min.js";
 //$jsFiles[] = "view/js/script.js";
+$jsFiles[] = "view/js/jquery-ui/jquery-ui.min.js";
 $jsFiles[] = "view/bootstrap/js/bootstrap.min.js";
 $jsFiles[] = "view/js/seetalert/sweetalert.min.js";
 $jsFiles[] = "view/js/bootpag/jquery.bootpag.min.js";
 $jsFiles[] = "view/js/bootgrid/jquery.bootgrid.js";
 $jsFiles[] = "view/bootstrap/bootstrapSelectPicker/js/bootstrap-select.min.js";
 //$jsFiles[] = "view/js/bootstrap-toggle/bootstrap-toggle.min.js";
-$jsFiles[] = "view/js/js-cookie/js.cookie.js";
+$jsFiles[] = "view/js/jquery.bootstrap-autohidingnavbar.min.js";
 $jsFiles[] = "view/css/flagstrap/js/jquery.flagstrap.min.js";
 $jsFiles[] = "view/js/webui-popover/jquery.webui-popover.min.js";
 $jsFiles[] = "view/js/bootstrap-list-filter/bootstrap-list-filter.min.js";
-if (!empty($video['type'])) {
-
-    $waveSurferEnabled = AVideoPlugin::getObjectDataIfEnabled("CustomizeAdvanced");
-    if ($waveSurferEnabled == false) {
-        $waveSurferEnabled = true;
-    } else {
-        $waveSurferEnabled = $waveSurferEnabled->EnableWavesurfer;
-    }
-    if ((($video['type'] == "audio") || ($video['type'] == "linkAudio")) && ($waveSurferEnabled)) {
-        $jsFiles[] = "view/js/videojs-wavesurfer/wavesurfer.min.js";
-        $jsFiles[] = "view/js/videojs-wavesurfer/dist/videojs.wavesurfer.min.js";
-    }
-}
+$jsFiles[] = "view/js/js-cookie/js.cookie.js";
+$jsFiles[] = "view/js/jquery-toast/jquery.toast.min.js";
 $jsFiles = array_merge($jsFiles, AVideoPlugin::getJSFiles());
 $jsURL = combineFiles($jsFiles, "js");
 ?>
 <script src="<?php echo $jsURL; ?>" type="text/javascript"></script>
-<?php
-require_once $global['systemRootPath'] . 'plugin/AVideoPlugin.php';
-?>
-<div id="pluginFooterCode">
+<div id="pluginFooterCode" >
     <?php
-    echo AVideoPlugin::getFooterCode();
+    if (!isForbidden()) {
+        echo AVideoPlugin::getFooterCode();
+    }
     ?>
 </div>
 <?php
@@ -115,13 +88,66 @@ if (!empty($advancedCustom->footerHTMLCode->value)) {
     echo $advancedCustom->footerHTMLCode->value;
 }
 ?>
-<textarea id="elementToCopy" style="
-          filter: alpha(opacity=0);
-          -moz-opacity: 0;
-          -khtml-opacity: 0;
-          opacity: 0;
-          position: absolute;
-          z-index: -9999;
-          top: 0;
-          left: 0;
-          pointer-events: none;"></textarea>
+<script>
+    var checkFooterTimout;
+    $(function () {
+        checkFooter();
+
+        $(window).scroll(function () {
+            clearTimeout(checkFooterTimout);
+            checkFooterTimout = setTimeout(function () {
+                checkFooter();
+            }, 100);
+        });
+        $(window).resize(function () {
+            clearTimeout(checkFooterTimout);
+            checkFooterTimout = setTimeout(function () {
+                checkFooter();
+            }, 100);
+        });
+
+        $(window).mouseup(function () {
+            clearTimeout(checkFooterTimout);
+            checkFooterTimout = setTimeout(function () {
+                checkFooter();
+            }, 100);
+        });
+
+<?php echo $footerjs; ?>
+
+    });
+    function checkFooter() {
+        $("#mainFooter").fadeIn();
+        if (getPageHeight() <= $(window).height()) {
+            clearTimeout(checkFooterTimout);
+            checkFooterTimout = setTimeout(function () {
+                checkFooter();
+            }, 1000);
+            $("#mainFooter").css("position", "fixed");
+        } else {
+            $("#mainFooter").css("position", "relative");
+        }
+    }
+
+
+    function getPageHeight() {
+        return $('#mainNavBar').height() + $('#mainFooter').height() + $('.container, .container-fluid').first().height();
+    }
+</script>
+<!--
+<?php
+/*
+if (User::isAdmin() && !empty($getCachesProcessed) && is_array($getCachesProcessed)) {
+    arsort($getCachesProcessed);
+    echo "Total cached methods " . PHP_EOL;
+    foreach ($getCachesProcessed as $key => $value) {
+        echo "$key => $value" . PHP_EOL;
+    }
+}
+ * 
+ */
+if(!empty($config) && is_object($config)){
+    echo PHP_EOL.'v:'.$config->getVersion().PHP_EOL;
+}
+?>
+-->

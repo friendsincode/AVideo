@@ -4,7 +4,7 @@ require_once $global['systemRootPath'] . 'objects/user.php';
 require_once $global['systemRootPath'] . 'objects/functions.php';
 
 if (!User::isAdmin()) {
-    header("Location: {$global['webSiteRootURL']}?error=" . __("You can not manager wallets"));
+    header("Location: {$global['webSiteRootURL']}?error=" . __("You can not manage wallets"));
     exit;
 }
 
@@ -14,7 +14,7 @@ $obj = $plugin->getDataObject();
 <!DOCTYPE html>
 <html lang="<?php echo $_SESSION['language']; ?>">
     <head>
-        <title>Support Author</title>
+        <title><?php echo __("Support Author") . $config->getPageTitleSeparator() . $config->getWebSiteTitle(); ?></title>
         <?php
         include $global['systemRootPath'] . 'view/include/head.php';
         ?>
@@ -138,7 +138,7 @@ $obj = $plugin->getDataObject();
                                 $('#userFormModal').modal('hide');
                                 $("#grid").bootgrid("reload");
                             } else {
-                                swal("<?php echo __("Sorry!"); ?>", "<?php echo __("Your user has NOT been saved!"); ?>", "error");
+                                avideoAlert("<?php echo __("Sorry!"); ?>", "<?php echo __("Your user has NOT been saved!"); ?>", "error");
                             }
                             modal.hidePleaseWait();
                         }

@@ -10,12 +10,12 @@ $o = AVideoPlugin::getObjectData("VideoLogoOverlay");
 <!DOCTYPE html>
 <html lang="<?php echo $_SESSION['language']; ?>">
     <head>
-        <title><?php echo $config->getWebSiteTitle(); ?>  :: Customize</title>
+        <title><?php echo __("Customize") . $config->getPageTitleSeparator() . $config->getWebSiteTitle(); ?></title>
         <?php
         include $global['systemRootPath'] . 'view/include/head.php';
         ?>
-        <link href="<?php echo $global['webSiteRootURL']; ?>js/Croppie/croppie.css" rel="stylesheet" type="text/css"/>
-        <script src="<?php echo $global['webSiteRootURL']; ?>js/Croppie/croppie.min.js" type="text/javascript"></script>
+        <link href="<?php echo getCDN(); ?>js/Croppie/croppie.css" rel="stylesheet" type="text/css"/>
+        <script src="<?php echo getCDN(); ?>js/Croppie/croppie.min.js" type="text/javascript"></script>
 
     </head>
     <body class="<?php echo $global['bodyClass']; ?>">
@@ -41,8 +41,8 @@ $o = AVideoPlugin::getObjectData("VideoLogoOverlay");
                         <div class="col-md-10 ">
                             <select class="form-control" id="position">
                                 <?php
-                                foreach ($o->position_options as $value) {
-                                    echo "<option ".($value==$o->position?"selected='selected'":"").">{$value}</option>";
+                                foreach ($o->position->type as $value) {
+                                    echo "<option ".($value==$o->position->value?"selected='selected'":"").">{$value}</option>";
                                 }
                                 ?>  
                             </select>
@@ -101,7 +101,7 @@ $o = AVideoPlugin::getObjectData("VideoLogoOverlay");
                     }
                     reader.readAsDataURL($(input)[0].files[0]);
                 } else {
-                    swal("Sorry - you're browser doesn't support the FileReader API");
+                    avideoAlert("Sorry - you're browser doesn't support the FileReader API");
                 }
             }
 
@@ -163,9 +163,9 @@ $o = AVideoPlugin::getObjectData("VideoLogoOverlay");
                             type: 'post',
                             success: function (response) {
                                 if (response.saved) {
-                                    swal("<?php echo __("Congratulations!"); ?>", "<?php echo __("Your configurations has been updated!"); ?>", "success");
+                                    avideoAlert("<?php echo __("Congratulations!"); ?>", "<?php echo __("Your configurations has been updated!"); ?>", "success");
                                 } else {
-                                    swal("<?php echo __("Sorry!"); ?>", "<?php echo __("Your configurations has NOT been updated!"); ?>", "error");
+                                    avideoAlert("<?php echo __("Sorry!"); ?>", "<?php echo __("Your configurations has NOT been updated!"); ?>", "error");
                                 }
                                 modal.hidePleaseWait();
                             }

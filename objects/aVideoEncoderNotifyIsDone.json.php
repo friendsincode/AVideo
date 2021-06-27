@@ -15,51 +15,48 @@ require_once $global['systemRootPath'] . 'objects/video.php';
 $_POST['videos_id'] = intval($_POST['videos_id']);
 
 if (empty($_POST)) {
-    $obj->msg = __("Your POST data is empty may be your vide file is too big for the host");
+    $obj->msg = __("Your POST data is empty, maybe your video file is too big for the host");
     _error_log($obj->msg);
     die(json_encode($obj));
 }
 
-// pass admin user and pass
-$user = new User("", @$_POST['user'], @$_POST['password']);
-$user->login(false, true);
+useVideoHashOrLogin();
 if (!User::canUpload()) {
-    $obj->msg = __("Permission denied to Notify Done: " . print_r($_POST, true));
+    $obj->msg = __("Permission denied to Notify Done: ") . print_r($_POST, true);
     _error_log($obj->msg);
     die(json_encode($obj));
 }
 
 if(!Video::canEdit($_POST['videos_id'])){
-    $obj->msg = __("Permission denied to edit a video: " . print_r($_POST, true));
+    $obj->msg = __("Permission denied to edit a video: ") . print_r($_POST, true);
     _error_log($obj->msg);
     die(json_encode($obj));
 }
-
+Video::clearCache($_POST['videos_id']);
 // check if there is en video id if yes update if is not create a new one
 $video = new Video("", "", $_POST['videos_id']);
 $obj->video_id = $_POST['videos_id'];
 
-if(empty($_POST['fail'])){
-    $status = $video->getStatus();
-    // if status is not unlisted
-    if($status!=='u' && $status !== 'a'){
-        if(empty($advancedCustom->makeVideosInactiveAfterEncode)){
-            // set active
-            $video->setStatus('a');
-        }else{
-            $video->setStatus('i');
-        }
-    }
-}else{
-    $video->setStatus('i');
-}
+
+$video->setAutoStatus(Video::$statusActive);
+
 $video_id = $video->save();
-if(empty($_POST['fail'])){
-    AVideoPlugin::afterNewVideo($_POST['videos_id']);
+
+$video = new Video("", "", $video_id);
+
+if($video->getStatus() === Video::$statusActive){
+    AVideoPlugin::afterNewVideo($video_id);
 }
 $obj->error = false;
 $obj->video_id = $video_id;
+Video::updateFilesize($video_id);
+// delete original files if any
+$originalFilePath =  Video::getStoragePath()."original_" . $video->getFilename();
+if(file_exists($originalFilePath)){
+    unlink($originalFilePath);
+}
 _error_log("Video is done notified {$video_id}: " . $video->getTitle());
+Video::clearCache($video_id);
 die(json_encode($obj));
 
 /*

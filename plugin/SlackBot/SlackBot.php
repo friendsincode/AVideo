@@ -10,6 +10,11 @@ require_once $global['systemRootPath'] . 'objects/subscribe.php';
 class SlackBot extends PluginAbstract
 {
 
+    public function getTags() {
+        return array(
+            PluginTags::$FREE,
+        );
+    }
     public function getDescription()
     {
         return "Send video upload notifications to Users on Slack who have subscribed to the channel via a Slack Bot.
@@ -29,14 +34,7 @@ class SlackBot extends PluginAbstract
     {
         return "cf145581-7d5e-4bb6-8c13-848a19j1564a";
     }
-    public function getTags()
-    {
-        return array(
-            'free',
-            'notifications',
-            'bot'
-        );
-    }
+    
     public function getPluginVersion()
     {
         return "1.0";
@@ -82,7 +80,7 @@ class SlackBot extends PluginAbstract
                 curl_setopt($c, CURLOPT_HTTPHEADER, $headers);
                 curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
                 $result = curl_exec($c);
-                $userSlackInformation = json_decode($result);
+                $userSlackInformation = _json_decode($result);
                 if ($userSlackInformation->ok == true) {
                     $slackChannel = $userSlackInformation->user->id;
                 } else {

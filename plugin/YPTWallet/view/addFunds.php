@@ -10,14 +10,14 @@ $obj = $plugin->getDataObject();
 if (!empty($paypal)) {
     $paypalObj = $paypal->getDataObject();
 }
-$options = json_decode($obj->addFundsOptions);
-unset($_SESSION['addFunds_Success']);
-unset($_SESSION['addFunds_Fail']);
+$options = _json_decode($obj->addFundsOptions);
+//unset($_SESSION['addFunds_Success']);
+//unset($_SESSION['addFunds_Fail']);
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $_SESSION['language']; ?>">
     <head>
-        <title>Add Funds</title>
+        <title><?php echo __("Add Funds") . $config->getPageTitleSeparator() . $config->getWebSiteTitle(); ?></title>
         <?php
         include $global['systemRootPath'] . 'view/include/head.php';
         ?>
@@ -75,7 +75,7 @@ unset($_SESSION['addFunds_Fail']);
                             <?php
                             $plugin->getAvailablePayments();
                             ?>
-                        </div>  
+                        </div>
                     </div>
                 </div>
 

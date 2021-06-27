@@ -5,8 +5,9 @@ require_once $configFile;
 require_once $global['systemRootPath'] . 'plugin/TopMenu/Objects/Menu.php';
 require_once $global['systemRootPath'] . 'plugin/TopMenu/Objects/MenuItem.php';
 
-$menu = Menu::getAllActive(2);
+$menu = Menu::getAllActive(Menu::$typeLeftMenu);
 ?>
+<!-- left menu start -->
 <?php
 foreach ($menu as $key => $value) {
     ?>
@@ -20,23 +21,15 @@ foreach ($menu as $key => $value) {
                 <?php
             }
             ?>
-            <?php echo $value['menuName']; ?>
+            <?php echo __($value['menuName']); ?>
         </h3>
     </li>
     <?php
     $menuItems = MenuItem::getAllFromMenu($value['id'], true);
     foreach ($menuItems as $key2 => $value2) {
-        $url = $value2['url'];
-        if (empty($url) || strpos($url, 'iframe:') !== false) {
-            if (!empty($value2['menuSeoUrlItem'])) {
-                $url = $global['webSiteRootURL'] . "menu/{$value2['menuSeoUrlItem']}";
-            } else {
-                $url = $global['webSiteRootURL'] . "plugin/TopMenu/?id={$value2['id']}";
-            }
-        }
         ?>
         <li>
-            <a  href="<?php echo $url; ?>" >
+            <a  href="<?php echo $value2['finalURL']; ?>" <?php echo $value2['target']; ?> >
                 <?php
                 if (!empty($value2['icon'])) {
                     ?>
@@ -44,11 +37,11 @@ foreach ($menu as $key => $value) {
                     <?php
                 }
                 ?>
-                <?php echo $value2['title'] ?>
+                <?php echo __($value2['title']); ?>
             </a>
         </li>            
         <?php
     }
 }
-?>
-                
+?> 
+<!-- left menu end -->       

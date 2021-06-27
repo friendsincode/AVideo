@@ -25,9 +25,15 @@ use PayPal\Api\ShippingAddress;
 
 class PayPalYPT extends PluginAbstract {
 
+    public function getTags() {
+        return array(
+            PluginTags::$MONETIZATION,
+            PluginTags::$FREE,
+        );
+    }
     public function getDescription() {
         return "Paypal module for several purposes<br>
-            Go to Paypal developer Site here https://developer.paypal.com/developer/applications (you must have Paypal account, of course)
+            Go to Paypal developer <a href='https://developer.paypal.com/developer/applications' target='_blank'>Site here</a> (you must have Paypal account, of course)
     <br>Click on Create App on right side of page
     <br>Choose name of your app and click Create App
     <br>Now you can see and manage everything include client ID and secret.";
@@ -48,6 +54,9 @@ class PayPalYPT extends PluginAbstract {
     public function getEmptyDataObject() {
         $obj = new stdClass();
         $obj->ClientID = "ASUkHFpWX0T8sr8EiGdLZ05m-RAb8l-hdRxoq-OXWmua2i7EUfqFkMZvSoGgH2LhK7zAqt29IiS2oRTn";
+        $obj->ClientSecret = "ECxtMBsLr0cFwSCgI0uaDiVzEUbVlV3r_o_qaU-SOsQqCEOKPq4uGlr1C0mhdDmEyO30mw7-PF0bOnfo";
+        $obj->subscriptionButtonLabel = "Subscribe With PayPal";
+        $obj->paymentButtonLabel = "Pay With PayPal";
         $obj->ClientSecret = "ECxtMBsLr0cFwSCgI0uaDiVzEUbVlV3r_o_qaU-SOsQqCEOKPq4uGlr1C0mhdDmEyO30mw7-PF0bOnfo";
         $obj->disableSandbox = false;
         return $obj;
@@ -157,13 +166,14 @@ class PayPalYPT extends PluginAbstract {
 
     private function createBillingPlan($redirect_url, $cancel_url, $total = '1.00', $currency = "USD", $frequency = "Month", $interval = 1, $name = 'Base Agreement', $plans_id = 0) {
         global $global;
-
+        _error_log("createBillingPlan: start: " . json_encode(array($redirect_url, $cancel_url, $total, $currency, $frequency, $interval, $name)));
+                
         require $global['systemRootPath'] . 'plugin/PayPalYPT/bootstrap.php';
         $notify_url = "{$global['webSiteRootURL']}plugin/PayPalYPT/ipn.php";
         // Create a new billing plan
         $plan = new Plan();
-        $plan->setName($name)
-                ->setDescription($name)
+        $plan->setName(substr(cleanString($name), 0, 126))
+                ->setDescription(substr(cleanString($name), 0, 126))
                 ->setType('INFINITE');
 
         $paymentDefinitionArray = array();
@@ -304,8 +314,8 @@ class PayPalYPT extends PluginAbstract {
             $startDate = date("Y-m-d\TH:i:s.000\Z", strtotime("+{$interval} {$frequency}"));
         }
         $agreement = new Agreement();
-        $agreement->setName($name)
-                ->setDescription($name)
+        $agreement->setName(substr(cleanString($name), 0, 126))
+                ->setDescription(substr(cleanString($name), 0, 126))
                 ->setStartDate($startDate);
 
         $plan = new Plan();
@@ -324,9 +334,9 @@ class PayPalYPT extends PluginAbstract {
             // Extract approval URL to redirect user
             return $agreement;
         } catch (PayPal\Exception\PayPalConnectionException $ex) {
-            _error_log("PayPal Error createBillingPlan:  startDate: {$startDate} " . $ex->getData());
+            _error_log("PayPal Error createBillingPlan 5: startDate: {$startDate} " . $ex->getData());
         } catch (Exception $ex) {
-            _error_log("PayPal Error createBillingPlan: startDate: {$startDate} " . $ex->getData());
+            _error_log("PayPal Error createBillingPlan 6: startDate: {$startDate} " . $ex->getData());
         }
         return false;
     }
@@ -437,7 +447,7 @@ class PayPalYPT extends PluginAbstract {
             $patch1 = new Patch();
             $patch1->setOp('replace')
                     ->setPath('/')
-                    ->setValue(json_decode('{"name": "' . $name . '"}'));
+                    ->setValue(_json_decode('{"name": "' . $name . '"}'));
 
             $paymentDefinitions = $createdPlan->getPaymentDefinitions();
             $paymentDefinition = $paymentDefinitions[0];
@@ -446,7 +456,7 @@ class PayPalYPT extends PluginAbstract {
             $patch2 = new Patch();
             $patch2->setOp('replace')
                     ->setPath('/payment-definitions/' . $paymentDefinitionId)
-                    ->setValue(json_decode('{
+                    ->setValue(_json_decode('{
                                                 "amount": {
                                                     "currency": "' . $currency . '",
                                                     "value": "' . $total . '"

@@ -15,7 +15,7 @@ if (empty($_POST['current']) && !empty($_GET['current'])) {
     $_POST['current'] = $_GET['current'];
 }
 if (empty($_POST['rowCount']) && !empty($_GET['rowCount'])) {
-    $_POST['rowCount'] = $_GET['rowCount'];
+    $_REQUEST['rowCount'] = $_GET['rowCount'];
 }
 if (empty($_POST['sort']) && !empty($_GET['sort'])) {
     $_POST['sort'] = $_GET['sort'];
@@ -45,8 +45,7 @@ if(!empty($random)){
 }
 
 foreach ($videos as $key => $value) {
-    unset($videos[$key]['password']);
-    unset($videos[$key]['recoverPass']);
+    unset($videos[$key]['password'], $videos[$key]['recoverPass']);
     $images = Video::getImageFromFilename($videos[$key]['filename'], $videos[$key]['type']);
     $videos[$key]['images'] = $images;
     $videos[$key]['Poster'] = !empty($objMob->portraitImage) ? $images->posterPortrait : $images->poster;
@@ -56,10 +55,8 @@ foreach ($videos as $key => $value) {
     $videos[$key]['createdHumanTiming'] = humanTiming(strtotime($videos[$key]['created']));
     $videos[$key]['pageUrl'] = "{$global['webSiteRootURL']}video/" . $videos[$key]['clean_title'];
     $videos[$key]['embedUrl'] = "{$global['webSiteRootURL']}videoEmbeded/" . $videos[$key]['clean_title'];
-    unset($_POST['sort']);
-    unset($_POST['current']);
-    unset($_POST['searchPhrase']);
-    $_POST['rowCount'] = 10;
+    unset($_POST['sort'], $_POST['current'], $_POST['searchPhrase']);
+    $_REQUEST['rowCount'] = 10;
     $_POST['sort']['created'] = "desc";
     $videos[$key]['comments'] = Comment::getAllComments($videos[$key]['id']);
     $videos[$key]['commentsTotal'] = Comment::getTotalComments($videos[$key]['id']);

@@ -5,7 +5,7 @@ $crc = uniqid();
     <?php if ((empty($_POST['disableAddTo'])) && (( ($advancedCustom != false) && ($advancedCustom->disableShareAndPlaylist == false)) || ($advancedCustom == false))) { ?>
        <a href="#" class="<?php echo $btnClass; ?>" id="addBtn<?php echo $videos_id . $crc; ?>" onclick="loadPlayLists('<?php echo $videos_id; ?>', '<?php echo $crc; ?>');">
             <span class="fa fa-plus"></span> 
-            <span class="hidden-xs"><?php echo __("Add to"); ?></span>
+            <span class="hidden-sm hidden-xs"><?php echo __("Add to"); ?></span>
         </a>
         <div class="webui-popover-content" >
             <?php if (User::isLogged()) { ?>
@@ -25,7 +25,7 @@ $crc = uniqid();
                         <?php echo __("Make it public"); ?>
                         <div class="material-switch pull-right">
                             <input id="publicPlayList<?php echo $videos_id . $crc; ?>" name="publicPlayList" type="checkbox" checked="checked"/>
-                            <label for="publicPlayList" class="label-success"></label>
+                            <label for="publicPlayList<?php echo $videos_id . $crc; ?>" class="label-success"></label>
                         </div>
                     </div>
                     <div class="form-group">
